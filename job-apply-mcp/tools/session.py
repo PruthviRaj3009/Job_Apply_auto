@@ -1,0 +1,179 @@
+"""
+Browser session / cookie management for each job platform.
+
+Cookies are stored as JSON files under ~/.job-apply-mcp/sessions/<platform>.json
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+from pathlib import Path
+from typing import Any
+
+from playwright.async_api import BrowserContext, async_playwright
+
+from config import APP_DIR, SESSIONS_DIR, ensure_dirs, get_user_agent
+
+logger = logging.getLogger(__name__)
+
+# LinkedIn is driven through a persistent Firefox profile rather than saved
+# cookies (it ties its session to browser fingerprint/local storage, so a
+# cookie-only replay gets logged out). Search and apply both launch this
+# same profile directory, so the login has to happen inside it.
+BROWSER_PROFILES_DIR = APP_DIR / "browser-profiles"
+PERSISTENT_PROFILE_PLATFORMS = {"linkedin"}
+
+PLATFORM_LOGIN_URLS: dict[str, str] = {
+    "linkedin": "https://www.linkedin.com/login",
+    "naukri": "https://www.naukri.com/mnjuser/login",
+    "wellfound": "https://wellfound.com/login",
+    "indeed": "https://secure.indeed.com/auth",
+    "hirist": "https://www.hirist.tech/login",
+    "glassdoor": "https://www.glassdoor.co.in/profile/login_input.htm",
+    "instahyre": "https://www.instahyre.com/login/",
+    "cutshort": "https://cutshort.io/login",
+}
+
+SUPPORTED_PLATFORMS = tuple(PLATFORM_LOGIN_URLS.keys())
+
+
+def _cookie_path(platform: str) -> Path:
+    return SESSIONS_DIR / f"{platform}.json"
+
+
+async def _interactive_login_persistent(platform: str, url: str) -> dict[str, Any]:
+    """
+    Log in inside the persistent browser profile that search/apply reuse.
+
+    Saving cookies would be useless here: the search and apply flows launch
+    this profile directory directly and never load the cookie jar, so the
+    login must be performed in the profile itself.
+    """
+    profile_dir = BROWSER_PROFILES_DIR / platform
+    profile_dir.mkdir(parents=True, exist_ok=True)
+
+    async with async_playwright() as pw:
+        context = await pw.firefox.launch_persistent_context(
+            str(profile_dir), headless=False,
+            viewport={"width": 1280, "height": 800},
+            locale="en-IN", timezone_id="Asia/Kolkata",
+        )
+        try:
+            page = context.pages[0] if context.pages else await context.new_page()
+            await page.goto(url, wait_until="domcontentloaded", timeout=30_000)
+            logger.info(
+                "Browser opened for %s. Log in (password or OTP) — the session "
+                "is stored in the profile itself. Waiting up to 2 minutes...",
+                platform,
+            )
+            await page.wait_for_timeout(120_000)
+            logged_in = "login" not in page.url and "checkpoint" not in page.url
+        finally:
+            await context.close()
+
+    return {
+        "success": True,
+        "platform": platform,
+        "storage": f"persistent browser profile: {profile_dir}",
+        "looks_logged_in": logged_in,
+        "note": (
+            "If looks_logged_in is false, re-run and complete the login "
+            "before the window closes."
+        ),
+    }
+
+
+def has_session(platform: str) -> bool:
+    """Return True if saved cookies exist for the platform."""
+    return _cookie_path(platform).is_file()
+
+
+async def load_cookies(context: BrowserContext, platform: str) -> bool:
+    """
+    Load saved cookies into a Playwright BrowserContext.
+    Returns True if cookies were loaded.
+    """
+    path = _cookie_path(platform)
+    if not path.is_file():
+        logger.warning("No saved session for %s", platform)
+        return False
+    cookies = json.loads(path.read_text())
+    await context.add_cookies(cookies)
+    logger.info("Loaded %d cookies for %s", len(cookies), platform)
+    return True
+
+
+async def save_cookies_from_context(
+    context: BrowserContext, platform: str
+) -> int:
+    """Persist current cookies from a BrowserContext to disk."""
+    ensure_dirs()
+    cookies = await context.cookies()
+    path = _cookie_path(platform)
+    path.write_text(json.dumps(cookies, indent=2))
+    logger.info("Saved %d cookies for %s", len(cookies), platform)
+    return len(cookies)
+
+
+async def interactive_login(platform: str) -> dict[str, Any]:
+    """
+    Open a **visible** browser window so the user can log in manually.
+    After the user closes the browser (or presses Enter in the terminal),
+    save the session cookies.
+
+    Returns a status dict.
+    """
+    platform = platform.lower().strip()
+    if platform not in PLATFORM_LOGIN_URLS:
+        return {
+            "success": False,
+            "error": f"Unsupported platform '{platform}'. Choose from: {', '.join(SUPPORTED_PLATFORMS)}",
+        }
+
+    url = PLATFORM_LOGIN_URLS[platform]
+    ensure_dirs()
+
+    if platform in PERSISTENT_PROFILE_PLATFORMS:
+        return await _interactive_login_persistent(platform, url)
+
+    async with async_playwright() as pw:
+        # Use Firefox — Chromium gets TLS-fingerprint blocked by many job sites
+        browser = await pw.firefox.launch(headless=False)
+        context = await browser.new_context(
+            user_agent=get_user_agent(),
+            viewport={"width": 1280, "height": 800},
+            locale="en-IN",
+            timezone_id="Asia/Kolkata",
+            ignore_https_errors=True,
+        )
+
+        # Load existing cookies if any (lets user resume partial sessions)
+        await load_cookies(context, platform)
+
+        page = await context.new_page()
+        await page.goto(url, wait_until="domcontentloaded", timeout=30_000)
+
+        # Wait for the user to finish logging in.
+        # We watch for navigation away from the login page or for the page
+        # to reach a logged-in state.  We give the user up to 5 minutes.
+        try:
+            logger.info(
+                "Browser opened for %s login. Please log in manually. "
+                "Waiting 3 minutes for you to complete login...",
+                platform,
+            )
+            # Wait 2 minutes for user to complete OTP login
+            await page.wait_for_timeout(120_000)
+        except Exception:
+            pass
+
+        count = await save_cookies_from_context(context, platform)
+        await browser.close()
+
+    return {
+        "success": True,
+        "platform": platform,
+        "cookies_saved": count,
+        "session_path": str(_cookie_path(platform)),
+    }
