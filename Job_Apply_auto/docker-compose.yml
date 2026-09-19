@@ -1,0 +1,60 @@
+# Local deployment: API, scheduler and Postgres.
+#
+# API and scheduler run as separate services from the same image because
+# their failure modes differ — a browser hang in discovery should not take
+# the dashboard down with it.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: jobpilot
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: jobpilot
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jobpilot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  api:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://jobpilot:${POSTGRES_PASSWORD}@db:5432/jobpilot
+      API_HOST: 0.0.0.0
+      # Required: binding to 0.0.0.0 without a key is refused at startup.
+      API_KEY: ${API_KEY:?set API_KEY in .env}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+    env_file: [.env]
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - jobdata:/app/data
+      - ./.credentials:/app/.credentials:ro
+    restart: unless-stopped
+
+  scheduler:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["python", "-m", "app.cli", "run"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://jobpilot:${POSTGRES_PASSWORD}@db:5432/jobpilot
+      # Headless in a container: there is no display to show a browser on.
+      HEADLESS: "true"
+    env_file: [.env]
+    volumes:
+      - jobdata:/app/data
+      - ./.credentials:/app/.credentials:ro
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  jobdata:

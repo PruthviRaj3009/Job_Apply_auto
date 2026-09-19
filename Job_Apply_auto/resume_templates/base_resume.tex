@@ -1,0 +1,37 @@
+% base_resume.tex — master template.
+%
+% Nothing job-specific lives here (section 8: "do not hardcode one job into
+% the template"). The template defines structure and order; the generator
+% supplies content from the master profile and decides which optional
+% sections appear.
+%
+% Placeholders are double-percent-delimited tokens rather than a templating
+% language, so this file stays valid LaTeX that can be compiled and inspected
+% on its own. (Written that way in prose deliberately: a literal example of
+% the token syntax here would be indistinguishable from an unfilled
+% placeholder to the validator.)
+
+\documentclass[10pt,a4paper]{article}
+\usepackage{ats}
+
+\begin{document}
+
+\resumeheader{%%FULL_NAME%%}{%%CONTACT_LINE%%}
+
+%%SUMMARY_SECTION%%
+
+%%SKILLS_SECTION%%
+
+%%EXPERIENCE_SECTION%%
+
+%%PROJECTS_SECTION%%
+
+%%EDUCATION_SECTION%%
+
+%%CERTIFICATIONS_SECTION%%
+
+%%ACHIEVEMENTS_SECTION%%
+
+%%PUBLICATIONS_SECTION%%
+
+\end{document}

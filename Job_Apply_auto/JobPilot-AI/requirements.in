@@ -1,0 +1,26 @@
+webdriver-manager
+python-dotenv
+selenium
+lxml
+langchain
+langchain-ollama
+langchain-chroma
+chromadb
+nltk
+scikit-learn
+beautifulsoup4
+google-auth 
+google-auth-oauthlib 
+google-auth-httplib2 
+google-api-python-client
+fastapi
+uvicorn[standard]
+pydantic
+sqlite-utils
+requests
+filelock
+numpy
+
+# Windows-only: drives the native file-upload dialog. Guarded at import
+# site (modules/core/upload_manager.py) so Linux/Docker installs work.
+pywinauto; sys_platform == "win32"

@@ -1,0 +1,93 @@
+{
+  "full_name": "Your Name",
+  "email": "you@example.com",
+  "phone": "+91 90000 00000",
+  "location": "Pune, India",
+  "headline": "DevOps Engineer",
+  "summary": "DevOps engineer with 4 years running production Kubernetes on GCP.",
+  "total_experience_years": 4,
+  "notice_period_days": 60,
+  "github_url": "https://github.com/yourhandle",
+  "linkedin_url": "https://linkedin.com/in/yourhandle",
+  "portfolio_url": "https://yoursite.dev",
+
+  "target_roles": ["DevOps Engineer", "Platform Engineer", "Site Reliability Engineer"],
+  "search_keywords": ["DevOps Engineer", "Platform Engineer", "SRE"],
+  "preferred_locations": ["Pune", "Remote", "Bangalore"],
+  "excluded_keywords": ["helpdesk", "desktop support", "field engineer"],
+  "excluded_companies": [],
+  "preferences": {
+    "remote_ok": true,
+    "max_days_old": 14,
+    "easy_apply_only": false
+  },
+
+  "skills": [
+    {
+      "name": "Kubernetes",
+      "years": 3,
+      "aliases": ["k8s", "GKE", "EKS"],
+      "evidence": "Ran production GKE clusters serving 40M requests/day at Acme"
+    },
+    {
+      "name": "Terraform",
+      "years": 3,
+      "evidence": "Owned the Terraform modules for every environment at Acme"
+    },
+    {
+      "name": "Python",
+      "years": 4,
+      "evidence": "Built the internal deployment tooling"
+    },
+    {
+      "name": "GCP",
+      "years": 3,
+      "evidence": "Primary cloud at Acme"
+    }
+  ],
+
+  "experience": [
+    {
+      "company": "Acme Corp",
+      "title": "DevOps Engineer",
+      "location": "Pune",
+      "start_date": "2022-01",
+      "is_current": true,
+      "bullets": [
+        "Ran production GKE clusters serving 40M requests/day",
+        "Cut deployment time 60% by rebuilding CI on GitHub Actions",
+        "Owned Terraform modules across all environments"
+      ],
+      "technologies": ["Kubernetes", "Terraform", "GCP", "GitHub Actions"]
+    }
+  ],
+
+  "education": [
+    {
+      "institution": "Pune University",
+      "degree": "Bachelor of Engineering",
+      "field_of_study": "Computer Science",
+      "start_date": "2016-08",
+      "end_date": "2020-05"
+    }
+  ],
+
+  "projects": [
+    {
+      "name": "Cluster Autoscaler",
+      "description": "Custom autoscaler for GKE workloads",
+      "bullets": ["Reduced idle node cost by 35%"],
+      "technologies": ["Go", "Kubernetes"],
+      "repo_url": "https://github.com/yourhandle/autoscaler"
+    }
+  ],
+
+  "certifications": [
+    {
+      "name": "Certified Kubernetes Administrator",
+      "issuer": "CNCF",
+      "issued_date": "2023-03",
+      "credential_url": "https://cert.example.com/verify/123"
+    }
+  ]
+}

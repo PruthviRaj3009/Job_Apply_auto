@@ -1,0 +1,12 @@
+# Default: let git normalise text files.
+* text=auto
+
+# Files that run inside the Linux container MUST keep LF endings. A CRLF
+# shebang line makes the kernel fail with "no such file or directory",
+# which is a deeply confusing way for a container to refuse to start —
+# and it happens automatically on a Windows checkout without this.
+*.sh text eol=lf
+Dockerfile text eol=lf
+docker-entrypoint.sh text eol=lf
+*.tex text eol=lf
+*.sty text eol=lf

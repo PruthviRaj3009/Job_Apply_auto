@@ -1,0 +1,98 @@
+% ats.sty — ATS-friendly resume styling.
+%
+% Design constraints, all of them driven by how applicant tracking systems
+% actually read a PDF:
+%
+%   * Single column, no tables for layout. Multi-column layouts and tabular
+%     positioning are the single most common reason an ATS scrambles a resume
+%     into unusable word order.
+%   * No graphics, no icons, no text boxes. Anything that is not a glyph in
+%     the text layer is invisible to a parser, and icon fonts often extract as
+%     random characters next to the contact details.
+%   * Standard section headings in plain text, so a parser's heading
+%     heuristics find them.
+%   * Hyperlinks carry their URL in the text layer as well as the annotation,
+%     because most parsers read text and ignore link annotations — which is
+%     how GitHub and portfolio links silently disappear (section 8, 30).
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{ats}[2026/09/19 ATS-friendly resume style]
+
+\RequirePackage[T1]{fontenc}
+\RequirePackage[utf8]{inputenc}
+\RequirePackage{lmodern}
+\RequirePackage{geometry}
+\RequirePackage{titlesec}
+\RequirePackage{enumitem}
+\RequirePackage{hyperref}
+\RequirePackage{xcolor}
+\RequirePackage{needspace}
+
+% Margins: tight enough for one page, wide enough to stay readable.
+\geometry{
+  a4paper,
+  top=1.4cm, bottom=1.4cm, left=1.5cm, right=1.5cm,
+  footskip=0.6cm
+}
+
+\definecolor{rulecolor}{gray}{0.45}
+
+% Plain black links. Coloured links look like decoration and some ATS
+% pipelines rasterize coloured runs.
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=black,
+  citecolor=black,
+  pdfborder={0 0 0}
+}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\tabcolsep}{0pt}
+
+% --- Section headings -----------------------------------------------------
+% Uppercase, rule underneath. Kept as real \section commands so the PDF has a
+% structural outline rather than just bold text.
+\titleformat{\section}
+  {\large\bfseries\uppercase}
+  {}{0em}{}[\vspace{-0.6em}\color{rulecolor}\rule{\linewidth}{0.6pt}]
+\titlespacing*{\section}{0pt}{0.9em}{0.5em}
+
+% --- Bullet lists ---------------------------------------------------------
+\setlist[itemize]{
+  leftmargin=1.1em,
+  topsep=0.15em,
+  itemsep=0.12em,
+  parsep=0pt,
+  label=\textbullet
+}
+
+% --- Building blocks ------------------------------------------------------
+
+% \resumeheader{name}{contact line}
+\newcommand{\resumeheader}[2]{%
+  \begin{center}
+    {\LARGE\bfseries #1}\\[0.35em]
+    {\small #2}
+  \end{center}
+  \vspace{0.2em}
+}
+
+% \entry{title}{right-hand text}{subtitle}{right-hand subtitle}
+% Uses \hfill rather than a tabular so the text layer stays in reading order.
+\newcommand{\entry}[4]{%
+  \needspace{3\baselineskip}
+  \textbf{#1}\hfill{\small #2}\\
+  {\itshape #3}\hfill{\small #4}\\[0.15em]
+}
+
+% \labelled{label}{content} — for the skills block.
+\newcommand{\labelled}[2]{\textbf{#1:} #2\\[0.2em]}
+
+% \visiblelink{url}{shown text}
+% Prints the text as a link AND leaves the bare URL in the text layer, so a
+% parser that ignores link annotations still captures the address.
+\newcommand{\visiblelink}[2]{\href{#1}{#2}}
+
+\endinput

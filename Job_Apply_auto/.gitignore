@@ -1,0 +1,51 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv*/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Environment & secrets ---
+.env
+.env.*
+!.env.example
+.credentials/
+*.pem
+*.key
+credentials.json
+client_secret*.json
+token.json
+
+# --- Local state (never commit: contains personal application data) ---
+.job_db/
+.chroma_db/
+.cache/
+.logs/
+*.db
+*.sqlite
+*.sqlite3
+sessions/
+browser-profiles/
+
+# --- User data & documents ---
+config/user_data.json
+data/profile/
+data/resumes/
+data/generated/
+*.pdf
+!docs/**/*.pdf
+
+# --- Browser drivers (download at install time, never vendor) ---
+*.exe
+chromedriver*
+geckodriver*
+
+# --- IDE ---
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
